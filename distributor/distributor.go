@@ -29,10 +29,10 @@ func Distributor(currentFloorCh chan int,
 	myIDCh chan string,
 	lightCh chan []types.Elevator) {
 
-	ElevSlice := make([]types.Elevator, 0)
+	ElevSlice := make([]types.Elevator, types.NElevators)
 	myID := <-myIDCh
 	ID, _ := strconv.Atoi(myID)
-
+	ElevSlice = elevSliceInit(ElevSlice, ID)
 	StateMachineOrderSlice := make([]types.SingleOrder, 0)
 	orderCount := 0
 	var elevOnNet peers.PeerUpdate
@@ -42,10 +42,8 @@ func Distributor(currentFloorCh chan int,
 		case floor := <-currentFloorCh:
 			MotorError = false
 			ElevSlice[ID].Floor = floor
-			fmt.Printf("Received foor arrival: %v inElevSlice = %v \n", floor, ElevSlice[ID].Floor)
 
 		case buttonPress := <-buttonEventCh:
-			fmt.Printf("in button Press \n")
 			if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
 				break
 			}
@@ -74,6 +72,7 @@ func Distributor(currentFloorCh chan int,
 			time.Sleep(2 * time.Millisecond)
 
 		case completedOrder := <-completedOrderCh: //orders executed by state machine
+			fmt.Printf("Completed order received \n")
 			for ordNum := 0; ordNum < len(StateMachineOrderSlice); {
 				if completedOrder.Floor == StateMachineOrderSlice[ordNum].Floor {
 					ElevSlice[ID].Orders[completedOrder.Floor][0] = 0
@@ -85,6 +84,8 @@ func Distributor(currentFloorCh chan int,
 					ordNum++
 				}
 			}
+
+			fmt.Printf("Elev Slice = %v \n", ElevSlice[ID].Orders)
 			lightCh <- ElevSlice
 			ElevToNetCh <- ElevSlice
 
@@ -104,6 +105,7 @@ func Distributor(currentFloorCh chan int,
 
 			lightCh <- ElevSlice
 			StateMachineOrderSlice = matrixToOrderList(ElevSlice[ID], orderCount, StateMachineOrderSlice)
+			fmt.Printf("StateMachine order slice %v \n", StateMachineOrderSlice)
 			if len(StateMachineOrderSlice) != 0 {
 				orderListCh <- StateMachineOrderSlice
 			}
@@ -113,11 +115,6 @@ func Distributor(currentFloorCh chan int,
 			// 	elevOnNet.Peers = append(elevOnNet.Peers, ID)
 			// }
 
-			if len(elevOnNet.New) > 0 {
-				new := types.Elevator{}
-				new.ID = elevOnNet.New
-				ElevSlice = append(ElevSlice, new)
-			}
 			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
 				if ElevSlice[IDindex].ID == elevOnNet.New {
 					ElevSlice[IDindex].Behaviour = types.Idle
@@ -159,9 +156,9 @@ func TimeToIdle(e types.Elevator, buttonEvent types.ButtonEvent) float64 {
 	case types.Idle: //idle
 		e.Dir = requests_chooseDirection(e)
 		if e.Dir == types.MotorDirectionStop {
-			fmt.Printf("Elev nr: %v floor %v \n", e.ID, e.Floor)
+
 			distancePlusOne := math.Abs(float64(e.Floor-buttonEvent.Floor)) + 1
-			fmt.Printf("distance plus one: %v \n", distancePlusOne)
+
 			weight := -4 / distancePlusOne
 			return weight
 		}
@@ -349,4 +346,16 @@ func sToi(ElevatorID string, elevSlice []types.Elevator) int {
 		}
 	}
 	return 0
+}
+
+func elevSliceInit(elevSlice []types.Elevator, ID int) []types.Elevator {
+	for elev := 0; elev < types.NElevators; elev++ {
+		intID, _ := strconv.Atoi(elevSlice[elev].ID)
+		if intID == ID {
+			elevSlice[elev].Behaviour = types.Idle
+		} else {
+			elevSlice[elev].Behaviour = types.Undefined
+		}
+	}
+	return elevSlice
 }

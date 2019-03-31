@@ -3,36 +3,33 @@
 package statemachine
 
 import (
+	"fmt"
 
 	"../driver"
 	"../types"
 	r "./requests"
-	"fmt"
 )
 
-
-
 // StateMachine for a single Elevator
-func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection, 
-					motorErrorCh chan bool, completedOrdersCh chan types.SingleOrder, 
-					orderListCh chan []types.SingleOrder, floorArrivalsCh chan int) {
+func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection,
+	motorErrorCh chan bool, completedOrdersCh chan types.SingleOrder,
+	orderListCh chan []types.SingleOrder, floorArrivalsCh chan int) {
 
-	
 	// Initializes a reference to the Elevator struct
-	var e  types.Elevator
+	var e types.Elevator
 
 	doorTimerFinished := make(chan bool)
 	newDoorTimer := make(chan bool)
 	go r.OpenDoorTimer(doorTimerFinished, newDoorTimer)
-	
+
 	motorError := make(chan bool)
 	resetMotorTimer := make(chan bool)
-	go r.CheckForMotorError(motorError, resetMotorTimer, &e)	
+	go r.CheckForMotorError(motorError, resetMotorTimer, &e)
 
 	//Drive the elevator to the initial position - Floor 0
 	driver.SetMotorDirection(types.MotorDirectionDown)
 	for {
-		e.Floor = <- floorArrivalsCh
+		e.Floor = <-floorArrivalsCh
 		driver.SetFloorIndicator(e.Floor)
 		currentFloorCh <- e.Floor
 		if e.Floor > 0 {
@@ -44,28 +41,29 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 		}
 	}
 
-	
-	for { 
-		select { 
-		case r.OrderList = <- orderListCh:
+	for {
+		select {
+		case r.OrderList = <-orderListCh:
 			switch e.Behaviour {
 			case types.Idle:
-				if e.Floor == r.OrderList[0].Floor {				
-					e.Behaviour = types.DoorOpen 
+				if e.Floor == r.OrderList[0].Floor {
+					e.Behaviour = types.DoorOpen
 					newDoorTimer <- true
 					driver.SetDoorOpenLamp(true)
 				} else {
-					e.Dir = r.ChooseDirection(e) 
+					e.Dir = r.ChooseDirection(e)
 					directionCh <- e.Dir
-					driver.SetMotorDirection(e.Dir) 
+					driver.SetMotorDirection(e.Dir)
 					e.Behaviour = types.Moving
 					resetMotorTimer <- true
 				}
-			case types.Moving:	
-			case types.DoorOpen:	 
+			case types.Moving:
+			case types.DoorOpen:
+			case types.Undefined:
+				fmt.Print("UNDEINED orderlist\n")
 			}
-		
-		case e.Floor = <- floorArrivalsCh:
+
+		case e.Floor = <-floorArrivalsCh:
 			driver.SetFloorIndicator(e.Floor)
 			fmt.Printf("Sending floor: %v from FSM \n", e.Floor)
 			currentFloorCh <- e.Floor
@@ -73,19 +71,21 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 			switch e.Behaviour {
 			case types.Idle:
 			case types.Moving:
-				if r.ShouldStop(e) { 
+				if r.ShouldStop(e) {
 					driver.SetMotorDirection(types.MotorDirectionStop)
 					newDoorTimer <- true
 					e.Behaviour = types.DoorOpen
 					driver.SetDoorOpenLamp(true)
 				}
 			case types.DoorOpen:
+			case types.Undefined:
+				fmt.Print("UNDEINED orderlist\n")
 			}
 
-		case <- doorTimerFinished:
+		case <-doorTimerFinished:
 			switch e.Behaviour {
-			case types.Idle:  
-			case types.Moving:   
+			case types.Idle:
+			case types.Moving:
 			case types.DoorOpen:
 				fmt.Printf("Sending completed order \n")
 				r.ClearOrders(completedOrdersCh, e)
@@ -99,9 +99,11 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 					e.Behaviour = types.Moving
 					resetMotorTimer <- true
 				}
+			case types.Undefined:
+				fmt.Print("UNDEINED orderlist\n")
 			}
 
-		case <- motorError:
+		case <-motorError:
 			motorErrorCh <- true
 		}
 	}
