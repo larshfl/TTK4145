@@ -93,6 +93,7 @@ func Distributor(currentFloorCh chan int,
 			ElevSlice[ID].Dir = dir
 
 		case newElevSlice := <-ElevToDistrCh:
+
 			for index := 0; index < types.NElevators; index++ {
 				incomingID, _ := strconv.Atoi(newElevSlice[index].ID)
 				if incomingID == ID {
@@ -294,14 +295,12 @@ func updateMatrixAndAppend(eOld types.Elevator, eNew types.Elevator, OrderList [
 }
 
 //ChanUpdateLight Inspired by Per Kjelsvik
-func ChanUpdateLight(lightCh chan []types.Elevator, ID string) {
+func ChanUpdateLight(lightCh chan []types.Elevator, ID int) {
 
 	for {
 		elevs := <-lightCh
-		sToi(ID, elevs)
-
 		for floorNum := 0; floorNum < types.NFloors; floorNum++ {
-			driver.SetButtonLamp(types.ButtonCab, floorNum, elevs[sToi(ID, elevs)].Orders[floorNum][types.ButtonCab] == 1)
+			driver.SetButtonLamp(types.ButtonCab, floorNum, elevs[ID].Orders[floorNum][types.ButtonCab] == 1)
 		}
 
 		exists := false
