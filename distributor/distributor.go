@@ -120,40 +120,31 @@ func Distributor(currentFloorCh chan int,
 			}
 			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
 				if ElevSlice[IDindex].ID == elevOnNet.New {
-					ElevSlice[IDindex] = types.Idle
+					ElevSlice[IDindex].Behaviour = types.Idle
 				}
 			}
 
-			if len(ElevSlice) == 3 {
-				fmt.Printf("1: %v \n", ElevSlice[0].ID)
-				fmt.Printf("2: %v \n", ElevSlice[1].ID)
-				fmt.Printf("3: %v \n", ElevSlice[2].ID)
-			}
-			//fmt.Printf("elev: %v Orders: %v \n", ElevMap[elevOnNet.Peers[ipIndex]].ID, ElevMap[elevOnNet.Peers[ipIndex]].Orders)
-			if len(elevOnNet.Lost) == 1 {
+			for index := 0; index < len(elevOnNet.Lost); index++ {
+				intID, _ := strconv.Atoi(elevOnNet.Lost[index])
+				ElevSlice[intID].Behaviour = types.Undefined
 				fmt.Printf("\n!!Redistributing orders!!\n")
-				redistributeOrders(elevOnNet, ElevSlice, buttonEventCh, myIP)
+				redistributeOrders(elevOnNet, ElevSlice, buttonEventCh, intID)
 			}
 		}
 	}
 }
 
 func redistributeOrders(elevOnNet peers.PeerUpdate, ElevSlice []types.Elevator,
-	buttonEventCh chan<- types.ButtonEvent, ID string) {
+	buttonEventCh chan<- types.ButtonEvent, intID int) {
 	var ButtonPress types.ButtonEvent
-	if len(elevOnNet.Lost) == 1 && elevOnNet.Peers[0] == ID {
-		for floorNum := 0; floorNum < types.NFloors; floorNum++ {
-			for btnNum := 0; btnNum < types.ButtonCab; btnNum++ {
-				fmt.Printf("Elev lost is: %v \n", elevOnNet.Lost[0])
-				fmt.Printf("Its map is: %v \n", ElevSlice[sToi(elevOnNet.Lost[0], ElevSlice)])
-				fmt.Printf("ElevSlice[myID].Orders[floorNum][btnNum]: %v\n\n", ElevSlice[sToi(elevOnNet.Lost[0], ElevSlice)].Orders[floorNum][btnNum])
-				if ElevSlice[sToi(elevOnNet.Lost[0], ElevSlice)].Orders[floorNum][btnNum] == 1 {
-					ButtonPress.Floor = floorNum
-					ButtonPress.Button = types.ButtonType(btnNum)
-					ElevSlice[sToi(elevOnNet.Lost[0], ElevSlice)].Orders[floorNum][btnNum] = 0
-					fmt.Printf("order sent %v \n", ButtonPress)
-					buttonEventCh <- ButtonPress
-				}
+	for floorNum := 0; floorNum < types.NFloors; floorNum++ {
+		for btnNum := 0; btnNum < types.ButtonCab; btnNum++ {
+
+			if ElevSlice[intID].Orders[floorNum][btnNum] == 1 {
+				ButtonPress.Floor = floorNum
+				ButtonPress.Button = types.ButtonType(btnNum)
+				ElevSlice[intID].Orders[floorNum][btnNum] = 0
+				buttonEventCh <- ButtonPress
 			}
 		}
 	}
