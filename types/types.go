@@ -8,9 +8,10 @@ package types
 
 // Elevator states
 const (
-	Idle     = 0
-	Moving   = 1
-	DoorOpen = 2
+	Undefined = -1
+	Idle      = 0
+	Moving    = 1
+	DoorOpen  = 2
 )
 
 // MotorDirection is the type for the three motor directions
@@ -64,6 +65,8 @@ const NButtons = 3
 // NFloors is the number of floors
 const NFloors = 4
 
+const NElevators = 3
+
 // SingleOrder is the ID, buttonType and Floor
 type SingleOrder struct {
 	ID      string
@@ -80,7 +83,7 @@ type ButtonEvent struct {
 
 // ButtonMap maps the ButtonType to an int
 var ButtonMap = map[ButtonType]int{
-	ButtonHallUp: 0,
+	ButtonHallUp:   0,
 	ButtonHallDown: 1,
-	ButtonCab: 2,
+	ButtonCab:      2,
 }

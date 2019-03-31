@@ -30,7 +30,9 @@ func Distributor(currentFloorCh chan int,
 	lightCh chan []types.Elevator) {
 
 	ElevSlice := make([]types.Elevator, 0)
-	myIP := <-myIDCh
+	myID := <-myIDCh
+	ID, _ := strconv.Atoi(myID)
+
 	StateMachineOrderSlice := make([]types.SingleOrder, 0)
 	orderCount := 0
 	var elevOnNet peers.PeerUpdate
@@ -39,49 +41,44 @@ func Distributor(currentFloorCh chan int,
 		select {
 		case floor := <-currentFloorCh:
 			MotorError = false
-			place := sToi(myIP, ElevSlice)
-			ElevSlice[place].Floor = floor
-			fmt.Printf("Received foor arrival: %v inElevSlice = %v \n", floor, ElevSlice[sToi(myIP, ElevSlice)].Floor)
+			ElevSlice[ID].Floor = floor
+			fmt.Printf("Received foor arrival: %v inElevSlice = %v \n", floor, ElevSlice[ID].Floor)
 
 		case buttonPress := <-buttonEventCh:
 			fmt.Printf("in button Press \n")
 			if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
 				break
 			}
-			if isDuplicate(buttonPress, ElevSlice, elevOnNet, myIP) {
+			if isDuplicate(buttonPress, ElevSlice, ID) {
 				break
 			}
 
-			lowestCost := myIP
+			lowestCost := ID
 			min := math.Inf(1)
-			for ipIndex := 0; ipIndex < len(elevOnNet.Peers); ipIndex++ {
-				fmt.Printf("Elev nr: %v floor: %v \n", ElevSlice[ipIndex].ID, ElevSlice[ipIndex].Floor)
 
-				cost := TimeToIdle(ElevSlice[ipIndex], buttonPress)
-				if min > cost {
-					min = cost
-					lowestCost = elevOnNet.Peers[ipIndex]
+			for ipIndex := 0; ipIndex < types.NElevators; ipIndex++ {
+				if ElevSlice[ipIndex].Behaviour != types.Undefined {
+					cost := TimeToIdle(ElevSlice[ipIndex], buttonPress)
+					if min > cost {
+						min = cost
+						lowestCost, _ = strconv.Atoi(ElevSlice[ipIndex].ID)
+					}
 				}
 			}
-			fmt.Printf("lowest cost: %v \n", lowestCost)
 
 			if types.ButtonCab == buttonPress.Button {
-				lowestCost = myIP
+				lowestCost = ID
 			}
-
-			ElevSlice[sToi(lowestCost, ElevSlice)].Orders[buttonPress.Floor][types.ButtonMap[buttonPress.Button]] = 1
-
+			ElevSlice[lowestCost].Orders[buttonPress.Floor][types.ButtonMap[buttonPress.Button]] = 1
 			ElevToNetCh <- ElevSlice
-
 			time.Sleep(2 * time.Millisecond)
 
 		case completedOrder := <-completedOrderCh: //orders executed by state machine
-			fmt.Printf(" \n Floor at beginning: %v \n", ElevSlice[sToi(myIP, ElevSlice)].Floor)
 			for ordNum := 0; ordNum < len(StateMachineOrderSlice); {
 				if completedOrder.Floor == StateMachineOrderSlice[ordNum].Floor {
-					ElevSlice[sToi(myIP, ElevSlice)].Orders[completedOrder.Floor][0] = 0
-					ElevSlice[sToi(myIP, ElevSlice)].Orders[completedOrder.Floor][1] = 0
-					ElevSlice[sToi(myIP, ElevSlice)].Orders[completedOrder.Floor][2] = 0
+					ElevSlice[ID].Orders[completedOrder.Floor][0] = 0
+					ElevSlice[ID].Orders[completedOrder.Floor][1] = 0
+					ElevSlice[ID].Orders[completedOrder.Floor][2] = 0
 					StateMachineOrderSlice = append(StateMachineOrderSlice[:ordNum], StateMachineOrderSlice[ordNum+1:]...)
 					ordNum = 0
 				} else {
@@ -89,49 +86,44 @@ func Distributor(currentFloorCh chan int,
 				}
 			}
 			lightCh <- ElevSlice
-			//updateLightsAllElevators(ElevMap, myIP, elevOnNet)
-			//updateLights(ElevSlice[sToi(myIP, ElevSlice)])
-
-			fmt.Printf("Floor: %v \n", ElevSlice[sToi(myIP, ElevSlice)].Floor)
-
 			ElevToNetCh <- ElevSlice
 
 		case dir := <-directionCh:
-			ElevSlice[sToi(myIP, ElevSlice)].Dir = dir
+			ElevSlice[ID].Dir = dir
 
 		case newElevSlice := <-ElevToDistrCh:
-			fmt.Printf("in new elev slice \n")
-
-			for index := 0; index < len(newElevSlice); index++ {
-				incomingID := newElevSlice[index].ID
-				//HVa skjer om man får samme id to ganger?
-				if incomingID == myIP {
-					ElevSlice[sToi(incomingID, ElevSlice)].Orders = newElevSlice[sToi(incomingID, ElevSlice)].Orders
+			for index := 0; index < types.NElevators; index++ {
+				incomingID, _ := strconv.Atoi(newElevSlice[index].ID)
+				if incomingID == ID {
+					ElevSlice[ID].Orders = newElevSlice[ID].Orders
 
 				} else {
-					ElevSlice[sToi(incomingID, ElevSlice)] = newElevSlice[sToi(incomingID, ElevSlice)]
+					ElevSlice[incomingID] = newElevSlice[incomingID]
 				}
 			}
 
 			lightCh <- ElevSlice
-			//updateLightsAllElevators(ElevSlice, myIP, elevOnNet)
-			//updateLights(ElevSlice[sToi(myIP, ElevSlice)])
-
-			StateMachineOrderSlice = matrixToOrderList(ElevSlice[sToi(myIP, ElevSlice)], orderCount, StateMachineOrderSlice)
+			StateMachineOrderSlice = matrixToOrderList(ElevSlice[ID], orderCount, StateMachineOrderSlice)
 			if len(StateMachineOrderSlice) != 0 {
 				orderListCh <- StateMachineOrderSlice
 			}
 
 		case elevOnNet = <-elevOnNetworkCh:
-			if len(elevOnNet.Peers) == 0 {
-				elevOnNet.Peers = append(elevOnNet.Peers, myIP)
-			}
+			// if len(elevOnNet.Peers) == 0 {
+			// 	elevOnNet.Peers = append(elevOnNet.Peers, ID)
+			// }
 
 			if len(elevOnNet.New) > 0 {
 				new := types.Elevator{}
 				new.ID = elevOnNet.New
 				ElevSlice = append(ElevSlice, new)
 			}
+			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
+				if ElevSlice[IDindex].ID == elevOnNet.New {
+					ElevSlice[IDindex] = types.Idle
+				}
+			}
+
 			if len(ElevSlice) == 3 {
 				fmt.Printf("1: %v \n", ElevSlice[0].ID)
 				fmt.Printf("2: %v \n", ElevSlice[1].ID)
@@ -254,16 +246,16 @@ func requests_clearAtCurrentFloor(e_old types.Elevator) types.Elevator {
 	return e
 }
 
-func isDuplicate(b types.ButtonEvent, ElevSlice []types.Elevator, p peers.PeerUpdate, myIP string) bool {
+func isDuplicate(b types.ButtonEvent, ElevSlice []types.Elevator, ID int) bool {
 
 	btnInt := types.ButtonMap[b.Button]
 
 	if btnInt == 2 {
-		return (ElevSlice[sToi(myIP, ElevSlice)].Orders[b.Floor][btnInt] == 1)
+		return (ElevSlice[ID].Orders[b.Floor][btnInt] == 1)
 
 	} else {
-		for elevIndex := 0; elevIndex < len(ElevSlice); elevIndex++ {
-			if ElevSlice[sToi(myIP, ElevSlice)].Orders[b.Floor][btnInt] == 1 {
+		for elevIndex := 0; elevIndex < types.NElevators; elevIndex++ {
+			if ElevSlice[ID].Orders[b.Floor][btnInt] == 1 {
 				return true
 			}
 		}
