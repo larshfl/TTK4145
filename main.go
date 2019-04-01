@@ -60,7 +60,6 @@ func main() {
 	var turnOfNetworkCh = make(chan bool)
 	var singleOrderCh = make(chan types.SingleOrder)
 	var elevOnNetworkCh = make(chan peers.PeerUpdate)
-	var orderConfirmCh = make(chan int)
 	var myIDCh = make(chan string)
 
 	go statemachine.StateMachine(currentFloorCh,
@@ -77,7 +76,6 @@ func main() {
 		directionCh,
 		motorErrorCh,
 		ElevToNetCh,
-		orderConfirmCh,
 		turnOfNetworkCh,
 		orderListCh,
 		singleOrderCh,

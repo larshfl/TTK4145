@@ -3,8 +3,6 @@
 package statemachine
 
 import (
-	"fmt"
-
 	"../driver"
 	"../types"
 	r "./requests"
@@ -60,12 +58,10 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 			case types.Moving:
 			case types.DoorOpen:
 			case types.Undefined:
-				fmt.Print("UNDEINED orderlist\n")
 			}
 
 		case e.Floor = <-floorArrivalsCh:
 			driver.SetFloorIndicator(e.Floor)
-			fmt.Printf("Sending floor: %v from FSM \n", e.Floor)
 			currentFloorCh <- e.Floor
 			resetMotorTimer <- true
 			switch e.Behaviour {
@@ -79,7 +75,6 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 				}
 			case types.DoorOpen:
 			case types.Undefined:
-				fmt.Print("UNDEINED orderlist\n")
 			}
 
 		case <-doorTimerFinished:
@@ -87,7 +82,6 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 			case types.Idle:
 			case types.Moving:
 			case types.DoorOpen:
-				fmt.Printf("Sending completed order \n")
 				r.ClearOrders(completedOrdersCh, e)
 				driver.SetDoorOpenLamp(false)
 				e.Dir = r.ChooseDirection(e)
@@ -100,7 +94,6 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 					resetMotorTimer <- true
 				}
 			case types.Undefined:
-				fmt.Print("UNDEINED orderlist\n")
 			}
 
 		case <-motorError:

@@ -22,7 +22,7 @@ func Distributor(currentFloorCh chan int,
 	directionCh chan types.MotorDirection,
 	motorErrorCh chan bool,
 	ElevToNetCh chan []types.Elevator,
-	orderConfirmCh chan int, turnOfNetworkCh chan bool,
+	turnOfNetworkCh chan bool,
 	orderListCh chan []types.SingleOrder,
 	singleOrderCh chan types.SingleOrder,
 	ElevToDistrCh chan []types.Elevator,
@@ -72,7 +72,6 @@ func Distributor(currentFloorCh chan int,
 			time.Sleep(2 * time.Millisecond)
 
 		case completedOrder := <-completedOrderCh: //orders executed by state machine
-			fmt.Printf("Completed order received \n")
 			for ordNum := 0; ordNum < len(StateMachineOrderSlice); {
 				if completedOrder.Floor == StateMachineOrderSlice[ordNum].Floor {
 					ElevSlice[ID].Orders[completedOrder.Floor][0] = 0
@@ -85,15 +84,13 @@ func Distributor(currentFloorCh chan int,
 				}
 			}
 
-			fmt.Printf("Elev Slice = %v \n", ElevSlice[ID].Orders)
-			lightCh <- ElevSlice
+			//lightCh <- ElevSlice
 			ElevToNetCh <- ElevSlice
 
 		case dir := <-directionCh:
 			ElevSlice[ID].Dir = dir
 
 		case newElevSlice := <-ElevToDistrCh:
-
 			for index := 0; index < types.NElevators; index++ {
 				incomingID, _ := strconv.Atoi(newElevSlice[index].ID)
 				if incomingID == ID {
@@ -106,16 +103,11 @@ func Distributor(currentFloorCh chan int,
 
 			lightCh <- ElevSlice
 			StateMachineOrderSlice = matrixToOrderList(ElevSlice[ID], orderCount, StateMachineOrderSlice)
-			fmt.Printf("StateMachine order slice %v \n", StateMachineOrderSlice)
 			if len(StateMachineOrderSlice) != 0 {
 				orderListCh <- StateMachineOrderSlice
 			}
 
 		case elevOnNet = <-elevOnNetworkCh:
-			// if len(elevOnNet.Peers) == 0 {
-			// 	elevOnNet.Peers = append(elevOnNet.Peers, ID)
-			// }
-
 			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
 				if ElevSlice[IDindex].ID == elevOnNet.New {
 					ElevSlice[IDindex].Behaviour = types.Idle
@@ -301,11 +293,12 @@ func ChanUpdateLight(lightCh chan []types.Elevator, ID int) {
 		elevs := <-lightCh
 		for floorNum := 0; floorNum < types.NFloors; floorNum++ {
 			driver.SetButtonLamp(types.ButtonCab, floorNum, elevs[ID].Orders[floorNum][types.ButtonCab] == 1)
+			fmt.Printf("elevs in light function %v \n", elevs[ID])
 		}
 
 		exists := false
 		for floor := 0; floor < types.NFloors; floor++ {
-			for btn := 0; btn < types.NButtons-1; btn++ {
+			for btn := 0; btn < types.ButtonCab; btn++ {
 				exists = false
 				for elevator := 0; elevator < len(elevs); elevator++ {
 					if elevs[elevator].Orders[floor][btn] == 1 {
@@ -349,11 +342,12 @@ func sToi(ElevatorID string, elevSlice []types.Elevator) int {
 
 func elevSliceInit(elevSlice []types.Elevator, ID int) []types.Elevator {
 	for elev := 0; elev < types.NElevators; elev++ {
-		intID, _ := strconv.Atoi(elevSlice[elev].ID)
-		if intID == ID {
-			elevSlice[elev].Behaviour = types.Idle
+		if elev == ID {
+			elevSlice[elev].Behaviour = types.Undefined
+			elevSlice[elev].ID = strconv.Itoa(elev)
 		} else {
 			elevSlice[elev].Behaviour = types.Undefined
+			elevSlice[elev].ID = strconv.Itoa(elev)
 		}
 	}
 	return elevSlice

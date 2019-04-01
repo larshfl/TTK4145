@@ -89,7 +89,7 @@ func rxMsgHandler(rxCh chan types.Message, peerChannel chan peers.PeerUpdate, th
 	for {
 		select {
 		case peerUpdate := <-peerChannel:
-			if len(peerUpdate.New) > 0 {
+			if (len(peerUpdate.New) > 0) && (peerUpdate.New != thisElevID) {
 				lastReceivedID[peerUpdate.New] = 0
 			}
 			if len(peerUpdate.Peers) == 0 {
@@ -110,8 +110,8 @@ func rxMsgHandler(rxCh chan types.Message, peerChannel chan peers.PeerUpdate, th
 				currentConfirmations = append(currentConfirmations, receivedMsg.ElevID)
 				confirmationMutex.Unlock()
 			}
-		//	fmt.Printf("received msg id %v \n", receivedMsg.MsgID)
-		//	fmt.Printf("last received id %v \n", lastReceivedID[receivedMsg.ElevID] )
+			//	fmt.Printf("received msg id %v \n", receivedMsg.MsgID)
+			//	fmt.Printf("last received id %v \n", lastReceivedID[receivedMsg.ElevID] )
 			if receivedMsg.MsgID > lastReceivedID[receivedMsg.ElevID] {
 				toDistributorCh <- receivedMsg.Content
 				sendConfirmation(receivedMsg.ElevID, thisElevID, txCh)
@@ -123,14 +123,14 @@ func rxMsgHandler(rxCh chan types.Message, peerChannel chan peers.PeerUpdate, th
 }
 
 //Network is the function to be called from outside the module
-func Network(fromDistributorCh chan []types.Elevator, 
-			toDistributorCh chan []types.Elevator,
-			peerTxEnableCh chan bool, 
-			peerDistributorCh chan peers.PeerUpdate, 
-			myID chan string,
-			portNum string,
-			ID string) {
-				
+func Network(fromDistributorCh chan []types.Elevator,
+	toDistributorCh chan []types.Elevator,
+	peerTxEnableCh chan bool,
+	peerDistributorCh chan peers.PeerUpdate,
+	myID chan string,
+	portNum string,
+	ID string) {
+
 	peerElevPort := 2203
 	elevMsgPort := 1903
 	//initialize channels
@@ -144,16 +144,14 @@ func Network(fromDistributorCh chan []types.Elevator,
 	// ID := now.UnixNano()lightCh
 	// localIP := strconv.FormatInt(ID, 10)
 	// myID <- localIP
-	
-	
+
 	//localIP := portNum
 	localIP := ID
 	// if err != nil {
 	// 	fmt.Println(err)
 	// 	localIP = "DISCONNECTED"
 	// }
-	myID <-localIP
-
+	myID <- localIP
 
 	//start go routines
 	go peers.Transmitter(peerElevPort, localIP, peerTxEnableCh)
