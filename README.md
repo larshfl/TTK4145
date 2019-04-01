@@ -24,7 +24,6 @@ Changes:
 
 The statemachine is inspired by Anders Petersens (@klasbo) lecture https://www.youtube.com/watch?v=K6YoNYNC7o4&t=1646s where he used a statemachine written in go as a visual aid. The elevator system design differs, but the structure has similarities.
 
-The distributor module uses TimeToIdle as well as all functions called inside this function. These functions are written by (@klasbo) and taken from https://github.com/TTK4145/Project-resources. The functions have been translated into Go syntax and some have been slightly modified.
 
 
 ## Legg også inn om vi har lånt kode fra nettet - Kan få problem med plagiat om vi har "lånt" kode uten å gi credit 
