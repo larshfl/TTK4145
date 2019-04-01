@@ -12,7 +12,7 @@ import (
 	"../types"
 )
 
-var MotorError = false
+// var MotorError = false
 
 // Distributor does..
 func Distributor(currentFloorCh chan int,
@@ -37,18 +37,20 @@ func Distributor(currentFloorCh chan int,
 	StateMachineOrderSlice := make([]types.SingleOrder, 0)
 	orderCount := 0
 	var elevOnNet peers.PeerUpdate
+	motorError := false
 
 	for {
 		select {
 		case floor := <-currentFloorCh:
-			MotorError = false
+			motorError = false
 			ElevSlice[ID].Floor = floor
 		case err := <-motorErrorCh:
 			networkEnableCh <- !err
+			motorError = err
 		case buttonPress := <-buttonEventCh:
-			// if ElevatorMotorError(buttonPress, motorErrorCh, networkEnableCh) {
-			// 	break
-			// }
+			if motorError && (buttonPress.Button != types.ButtonCab) {
+				break
+			}
 
 			if isDuplicate(buttonPress, ElevSlice, ID) {
 				break
@@ -327,14 +329,8 @@ func updateLights(e types.Elevator) {
 }
 
 // ElevatorMotorError turns of the network when a motor error is detected. It only returns true when a motor error is present and the button pressed is a Cab orders
-func ElevatorMotorError(buttonPress types.ButtonEvent, motorErrorCh chan bool, networkEnableCh chan bool) bool {
-	select {
-	case MotorError = <-motorErrorCh:
-		networkEnableCh <- true
-		return (buttonPress.Button != types.ButtonCab) && MotorError
-	default:
-		return (buttonPress.Button != types.ButtonCab) && MotorError
-	}
+func ElevatorMotorError(buttonPress types.ButtonEvent, motorError bool, networkEnableCh chan bool) bool {
+	return (buttonPress.Button != types.ButtonCab) && MotorError
 }
 
 func sToi(ElevatorID string, elevSlice []types.Elevator) int {
