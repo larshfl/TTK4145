@@ -5,24 +5,27 @@ package statemachine
 import (
 	"../driver"
 	"../types"
-	r "./requests"
+	"./requests"
 )
 
 // StateMachine for a single Elevator
-func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection,
-	motorErrorCh chan bool, completedOrdersCh chan types.SingleOrder,
-	orderListCh chan []types.SingleOrder, floorArrivalsCh chan int) {
+func StateMachine(
+	currentFloorCh 		chan int, 
+	directionCh 		chan types.MotorDirection,
+	motorErrorCh 		chan bool, 
+	completedOrdersCh 	chan types.SingleOrder,
+	orderListCh 		chan []types.SingleOrder, 
+	floorArrivalsCh 	chan int) {
 
-	// Initializes a reference to the Elevator struct
 	var e types.Elevator
 
 	doorTimerFinished := make(chan bool)
 	newDoorTimer := make(chan bool)
-	go r.OpenDoorTimer(doorTimerFinished, newDoorTimer)
+	go requests.OpenDoorTimer(doorTimerFinished, newDoorTimer)
 
 	motorError := make(chan bool)
 	resetMotorTimer := make(chan bool)
-	go r.CheckForMotorError(motorError, resetMotorTimer, &e)
+	go requests.CheckForMotorError(motorError, resetMotorTimer, &e)
 
 	//Drive the elevator to the initial position - Floor 0
 	driver.SetMotorDirection(types.MotorDirectionDown)
@@ -41,15 +44,15 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 
 	for {
 		select {
-		case r.OrderList = <-orderListCh:
+		case requests.OrderList = <-orderListCh:
 			switch e.Behaviour {
 			case types.Idle:
-				if e.Floor == r.OrderList[0].Floor {
+				if e.Floor == requests.OrderList[0].Floor {
 					e.Behaviour = types.DoorOpen
 					newDoorTimer <- true
 					driver.SetDoorOpenLamp(true)
 				} else {
-					e.Dir = r.ChooseDirection(e)
+					e.Dir = requests.ChooseDirection(e)
 					directionCh <- e.Dir
 					driver.SetMotorDirection(e.Dir)
 					e.Behaviour = types.Moving
@@ -67,7 +70,7 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 			switch e.Behaviour {
 			case types.Idle:
 			case types.Moving:
-				if r.ShouldStop(e) {
+				if requests.ShouldStop(e) {
 					driver.SetMotorDirection(types.MotorDirectionStop)
 					newDoorTimer <- true
 					e.Behaviour = types.DoorOpen
@@ -82,9 +85,9 @@ func StateMachine(currentFloorCh chan int, directionCh chan types.MotorDirection
 			case types.Idle:
 			case types.Moving:
 			case types.DoorOpen:
-				r.ClearOrders(completedOrdersCh, e)
+				requests.ClearOrders(completedOrdersCh, e)
 				driver.SetDoorOpenLamp(false)
-				e.Dir = r.ChooseDirection(e)
+				e.Dir = requests.ChooseDirection(e)
 				directionCh <- e.Dir
 				driver.SetMotorDirection(e.Dir)
 				if e.Dir == types.MotorDirectionStop {

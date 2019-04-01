@@ -1,27 +1,21 @@
 package types
 
-// const (
-// 	Idle elevatorBehavior = iota
-// 	Moving
-// 	DoorOpen
-// )
-
 // Elevator states
 const (
-	Undefined = -1
-	Idle      = 0
-	Moving    = 1
-	DoorOpen  = 2
+	Undefined 			= iota - 1
+	Idle      
+	Moving    
+	DoorOpen  
 )
 
 // MotorDirection is the type for the three motor directions
 type MotorDirection int
 
-// Motor Directions
+// Motor direction
 const (
-	MotorDirectionUp   MotorDirection = 1
-	MotorDirectionDown                = -1
-	MotorDirectionStop                = 0
+	MotorDirectionDown  = iota - 1
+	MotorDirectionStop                
+	MotorDirectionUp
 )
 
 // ButtonType is the type
@@ -29,9 +23,9 @@ type ButtonType int
 
 //Buttons
 const (
-	ButtonHallUp   ButtonType = 0
-	ButtonHallDown            = 1
-	ButtonCab                 = 2
+	ButtonHallUp    	= iota
+	ButtonHallDown            
+	ButtonCab                 
 )
 
 // ElevatorBehaviour is the type for elevator behaviour
@@ -41,7 +35,7 @@ type ElevatorBehaviour int
 type Elevator struct {
 	Floor     int
 	Dir       MotorDirection
-	Orders    [NFloors][NButtons]int // |Up	|Down	|Cab	|
+	Orders    [NumFloors][NumButtons]int // |Up	|Down	|Cab	|
 	Behaviour ElevatorBehaviour
 	ID        string //bruke IP som ID?
 }
@@ -54,25 +48,20 @@ type Message struct {
 	MsgID             int
 }
 
-// TravelTime for the elevator between two floors
-const TravelTime = 3.0 // reisetid mellom etasjer
-// DoorOpenTime for the elevator
-const DoorOpenTime = 3.0
-
-// NButtons is the number of different buttontypes
-const NButtons = 3
-
-// NFloors is the number of floors
-const NFloors = 4
-
-const NElevators = 3
+// Constants
+const (
+	TravelTime					= 3.0
+	DoorOpenTime 				= 3.0
+	NumElevators				= 3
+	NumButtons 					= 3
+	NumFloors 					= 4
+	MaxTimeBeforeMotorError 	= 5
+)
 
 // SingleOrder is the ID, buttonType and Floor
 type SingleOrder struct {
-	ID      string
 	Button  ButtonType
 	Floor   int
-	MsgConf bool
 }
 
 // ButtonEvent is the Floor and buttontype

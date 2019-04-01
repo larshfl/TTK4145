@@ -1,15 +1,52 @@
 # Gruppe 1 - Sanntidsprogrammering TTK4145 - Vår 2019
 
-## Qucik start 
-### Run elevator on the hardware used at "sanntidslabben"
+## Quick start 
+
+### Clone the repo
 ```ruby 
-$ ./startWithSafety.sh <port number>
+$ ./clone.sh [path: $HOME/Desktop]
 ```
+This script check if the folder Gruppe1 is a directory in $HOME/Desktop. If it don't exists it will make the directory $HOME/Desktop/Gruppe1 and clone the repositort to this directory. If $HOME/Desktop/Gruppe1 exists it will check for a repository and delete it befor cloning the latest version available on GitHub
+
+### Run elevator on the hardware used at "sanntidslabben"
+
+```ruby 
+$ ./gruppe1.sh <port number>
+```
+This starts the Elevator server used to communicate with the elevators at "sanntidslabben". After it starts the Elevator server it starts the main program with the ID provided by the user. In this case 0, 1 or 2. 
+
+### Run elevators on the simulator
+```ruby 
+$ ./elevatorShell.sh
+```
+This starts three simulators on the default ports 10001, 10002 and 10003. And starts three instanses of the main 
+program with the same ports and default ID's 0, 1 and 2.
+
 
 ## Intro
+In the course TTK4145 "sanntidsprogrammering" we have a project that requires us to make a 
+roubust elvator control system with `n`
+
+### Flow diagram
+![Flow diagram](https://i.imgur.com/fSjjoZ9.png)
 
 
-## System descripton? Should we have the flow diagram here?
+As the flow diagram above shows our system is divided into four main modules
+### State Machine
+
+### Distributour
+
+### Driver
+
+### Network
+#### Network accepted service
+
+![Network Handshake](https://i.imgur.com/ubruIMN.png)
+
+
+
+
+
 
 
 ## Code inspiration
@@ -22,8 +59,7 @@ Changes: structs and consts have been renamed and moved to types
 The network module uses conn, bcast, localip and peers. These are almost an exact copy of https://github.com/TTK4145/Network-go/tree/master/network<br />
 Changes:
 
-The statemachine is inspired by Anders Petersens (@klasbo) lecture https://www.youtube.com/watch?v=K6YoNYNC7o4&t=1646s where he used a statemachine written in go as a visual aid. The elevator system design differs, but the structure has similarities.
-
+The statemachine is inspired by Anders Petersens (@klasbo) lecture https://www.youtube.com/watch?v=K6YoNYNC7o4&t=1646s where he used a statemachine written in go as a visual aid. The elevator system design differs, but the structure have similarities.
 
 
 ## Legg også inn om vi har lånt kode fra nettet - Kan få problem med plagiat om vi har "lånt" kode uten å gi credit 
@@ -45,14 +81,14 @@ ___
 
 
 ## Testing
-The development of this elevator system required lots of immaculate testing. We used the simulator written by @Klasbon as the main test environment. The simulator is available in this repository [SimElevator](https://github.com/TTK4145-students-2019/project-group-1/blob/master/SimElevatorServer). 
+The development of this elevator system required lots of immaculate testing. We used the simulator written by @Klasbo as the main test environment. The simulator is available in this repository [SimElevator](https://github.com/TTK4145-students-2019/project-group-1/blob/master/SimElevatorServer). 
 
-In order to make testing with multiples computers as smooth as possible we're using SSH to get access multiple computers. After a connection is established we run a shell script. That checks if a folder Gruppe1 exists on the Desktop and if the repo exisits in that folder the repo will be deleted and the latets version will be cloned
+In order to make testing with multiples computers as smooth as possible we're using SSH to get access multiple computers. After a connection is established we run a shell script. That checks if a folder Gruppe1 exists on the Desktop and if the repo exisits in that folder the repo will be deleted and the latets version will be cloned.
+
+
 
 
 ## Connect with SSH
-
-
 
 ### Preparations on linux based server
 ```ruby 

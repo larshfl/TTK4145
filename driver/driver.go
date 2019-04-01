@@ -70,6 +70,30 @@ func SetStopLamp(value bool) {
 	_conn.Write([]byte{5, toByte(value), 0, 0})
 }
 
+//ChanUpdateButtonLights - turns on and off all button lights
+func ChanUpdateButtonLights(lightCh chan []types.Elevator, ID int) {
+
+	for {
+		elevs := <-lightCh
+		for floorNum := 0; floorNum < types.NumFloors; floorNum++ {
+			SetButtonLamp(types.ButtonCab, floorNum, elevs[ID].Orders[floorNum][types.ButtonCab] == 1)
+		}
+
+		exists := false
+		for floor := 0; floor < types.NumFloors; floor++ {
+			for btn := 0; btn < types.ButtonCab; btn++ {
+				exists = false
+				for elevator := 0; elevator < len(elevs); elevator++ {
+					if elevs[elevator].Orders[floor][btn] == 1 {
+						exists = true
+					}
+				}
+				SetButtonLamp(types.ButtonType(btn), floor, exists)
+			}
+		}
+	}
+}
+
 // PollButtons polls ButtonType - HallUP, HallDown and Cab
 func PollButtons(receiver chan<- types.ButtonEvent) { 
 	prev := make([][3]bool, _numFloors)
