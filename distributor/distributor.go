@@ -43,10 +43,13 @@ func Distributor(currentFloorCh chan int,
 		select {
 		case floor := <-currentFloorCh:
 			motorError = false
+			networkEnableCh <- true
 			ElevSlice[ID].Floor = floor
+
 		case err := <-motorErrorCh:
 			networkEnableCh <- !err
 			motorError = err
+
 		case buttonPress := <-buttonEventCh:
 			if motorError && (buttonPress.Button != types.ButtonCab) {
 				break
