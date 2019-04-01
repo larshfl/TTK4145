@@ -328,11 +328,6 @@ func updateLights(e types.Elevator) {
 	}
 }
 
-// ElevatorMotorError turns of the network when a motor error is detected. It only returns true when a motor error is present and the button pressed is a Cab orders
-func ElevatorMotorError(buttonPress types.ButtonEvent, motorError bool, networkEnableCh chan bool) bool {
-	return (buttonPress.Button != types.ButtonCab) && MotorError
-}
-
 func sToi(ElevatorID string, elevSlice []types.Elevator) int {
 
 	for index := 0; index < len(elevSlice); index++ {
