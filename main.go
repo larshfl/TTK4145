@@ -57,7 +57,7 @@ func main() {
 	//Distributor <-> Network
 	var ElevToNetCh = make(chan []types.Elevator, 16)
 	var ElevToDistrCh = make(chan []types.Elevator, 16)
-	var turnOfNetworkCh = make(chan bool)
+	var networkEnableCh = make(chan bool)
 	var singleOrderCh = make(chan types.SingleOrder)
 	var elevOnNetworkCh = make(chan peers.PeerUpdate)
 	var myIDCh = make(chan string)
@@ -76,7 +76,7 @@ func main() {
 		directionCh,
 		motorErrorCh,
 		ElevToNetCh,
-		turnOfNetworkCh,
+		networkEnableCh,
 		orderListCh,
 		singleOrderCh,
 		ElevToDistrCh,
@@ -85,7 +85,7 @@ func main() {
 
 	go network.Network(ElevToNetCh,
 		ElevToDistrCh,
-		turnOfNetworkCh,
+		networkEnableCh,
 		elevOnNetworkCh,
 		myIDCh,
 		portNum,

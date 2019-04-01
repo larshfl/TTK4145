@@ -22,7 +22,7 @@ func Distributor(currentFloorCh chan int,
 	directionCh chan types.MotorDirection,
 	motorErrorCh chan bool,
 	ElevToNetCh chan []types.Elevator,
-	turnOfNetworkCh chan bool,
+	networkEnableCh chan bool,
 	orderListCh chan []types.SingleOrder,
 	singleOrderCh chan types.SingleOrder,
 	ElevToDistrCh chan []types.Elevator,
@@ -44,9 +44,9 @@ func Distributor(currentFloorCh chan int,
 			MotorError = false
 			ElevSlice[ID].Floor = floor
 		case err := <-motorErrorCh:
-			turnOfNetworkCh <- err
+			networkEnableCh <- !err
 		case buttonPress := <-buttonEventCh:
-			// if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
+			// if ElevatorMotorError(buttonPress, motorErrorCh, networkEnableCh) {
 			// 	break
 			// }
 
@@ -327,10 +327,10 @@ func updateLights(e types.Elevator) {
 }
 
 // ElevatorMotorError turns of the network when a motor error is detected. It only returns true when a motor error is present and the button pressed is a Cab orders
-func ElevatorMotorError(buttonPress types.ButtonEvent, motorErrorCh chan bool, turnOfNetworkCh chan bool) bool {
+func ElevatorMotorError(buttonPress types.ButtonEvent, motorErrorCh chan bool, networkEnableCh chan bool) bool {
 	select {
 	case MotorError = <-motorErrorCh:
-		turnOfNetworkCh <- true
+		networkEnableCh <- true
 		return (buttonPress.Button != types.ButtonCab) && MotorError
 	default:
 		return (buttonPress.Button != types.ButtonCab) && MotorError
