@@ -131,8 +131,8 @@ func Network(fromDistributorCh chan []types.Elevator,
 	portNum string,
 	ID string) {
 
-	peerElevPort := 2203
-	elevMsgPort := 1903
+	peerElevPort := 22032
+	elevMsgPort := 19032
 	//initialize channels
 	peerCh := make(chan peers.PeerUpdate)
 	txCh := make(chan types.Message)

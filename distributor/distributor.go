@@ -32,7 +32,9 @@ func Distributor(currentFloorCh chan int,
 	ElevSlice := make([]types.Elevator, types.NElevators)
 	myID := <-myIDCh
 	ID, _ := strconv.Atoi(myID)
+
 	ElevSlice = elevSliceInit(ElevSlice, ID)
+	fmt.Printf("Elev slice initialized to %v \n", ElevSlice)
 	StateMachineOrderSlice := make([]types.SingleOrder, 0)
 	orderCount := 0
 	var elevOnNet peers.PeerUpdate
@@ -47,6 +49,7 @@ func Distributor(currentFloorCh chan int,
 			if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
 				break
 			}
+			fmt.Printf("Elev slice: %v \n", ElevSlice)
 			if isDuplicate(buttonPress, ElevSlice, ID) {
 				break
 			}
@@ -88,6 +91,7 @@ func Distributor(currentFloorCh chan int,
 			ElevToNetCh <- ElevSlice
 
 		case dir := <-directionCh:
+			fmt.Printf("Elev slice dir: %v \n", ElevSlice)
 			ElevSlice[ID].Dir = dir
 
 		case newElevSlice := <-ElevToDistrCh:
@@ -100,7 +104,7 @@ func Distributor(currentFloorCh chan int,
 					ElevSlice[incomingID] = newElevSlice[incomingID]
 				}
 			}
-
+			fmt.Printf("Elev slice sent to light %v \n", ElevSlice)
 			lightCh <- ElevSlice
 			StateMachineOrderSlice = matrixToOrderList(ElevSlice[ID], orderCount, StateMachineOrderSlice)
 			if len(StateMachineOrderSlice) != 0 {
@@ -108,6 +112,8 @@ func Distributor(currentFloorCh chan int,
 			}
 
 		case elevOnNet = <-elevOnNetworkCh:
+			fmt.Printf("Elev slice elev on net: %v \n", ElevSlice)
+			fmt.Printf(" %v \n", elevOnNet.New)
 			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
 				if ElevSlice[IDindex].ID == elevOnNet.New {
 					ElevSlice[IDindex].Behaviour = types.Idle
@@ -293,7 +299,6 @@ func ChanUpdateLight(lightCh chan []types.Elevator, ID int) {
 		elevs := <-lightCh
 		for floorNum := 0; floorNum < types.NFloors; floorNum++ {
 			driver.SetButtonLamp(types.ButtonCab, floorNum, elevs[ID].Orders[floorNum][types.ButtonCab] == 1)
-			fmt.Printf("elevs in light function %v \n", elevs[ID])
 		}
 
 		exists := false
@@ -343,7 +348,7 @@ func sToi(ElevatorID string, elevSlice []types.Elevator) int {
 func elevSliceInit(elevSlice []types.Elevator, ID int) []types.Elevator {
 	for elev := 0; elev < types.NElevators; elev++ {
 		if elev == ID {
-			elevSlice[elev].Behaviour = types.Undefined
+			elevSlice[elev].Behaviour = types.Idle
 			elevSlice[elev].ID = strconv.Itoa(elev)
 		} else {
 			elevSlice[elev].Behaviour = types.Undefined
