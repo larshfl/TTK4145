@@ -21,4 +21,4 @@ type Message struct {
 
 If an elevator receives a message, it is handled in the rxMsgHandler, which handles peer updates from the peer module and incoming message from the UDPreceiver. If a peer update is received it updates the distributor and updates the shared list of peers. If a message is received from the UDPreceiver it checks how it should handle the message by checking confirmedMsgOwner, MsgID and sender-ID. If it is a "content-message" it sends a confirmation message and updates distributor if the message is newer thatn the previously received from the senders ID.
 
-The transmitting, reception, and formatting of messages is done in the bcast module, which is written by @klasbo and @kjetilkjeka. They have also written the peers-module used heavily in network. 
+The transmitting, reception, and formatting of messages is done in the bcast module, which is written by github-users klasbo and kjetilkjeka. They have also written the peers-module used heavily in network. 
