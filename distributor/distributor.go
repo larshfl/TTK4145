@@ -34,7 +34,6 @@ func Distributor(currentFloorCh chan int,
 	ID, _ := strconv.Atoi(myID)
 
 	ElevSlice = elevSliceInit(ElevSlice, ID)
-	fmt.Printf("Elev slice initialized to %v \n", ElevSlice)
 	StateMachineOrderSlice := make([]types.SingleOrder, 0)
 	orderCount := 0
 	var elevOnNet peers.PeerUpdate
@@ -44,12 +43,13 @@ func Distributor(currentFloorCh chan int,
 		case floor := <-currentFloorCh:
 			MotorError = false
 			ElevSlice[ID].Floor = floor
-
+		case err := <-motorErrorCh:
+			turnOfNetworkCh <- err
 		case buttonPress := <-buttonEventCh:
-			if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
-				break
-			}
-			fmt.Printf("Elev slice: %v \n", ElevSlice)
+			// if ElevatorMotorError(buttonPress, motorErrorCh, turnOfNetworkCh) {
+			// 	break
+			// }
+
 			if isDuplicate(buttonPress, ElevSlice, ID) {
 				break
 			}
@@ -91,7 +91,6 @@ func Distributor(currentFloorCh chan int,
 			ElevToNetCh <- ElevSlice
 
 		case dir := <-directionCh:
-			fmt.Printf("Elev slice dir: %v \n", ElevSlice)
 			ElevSlice[ID].Dir = dir
 
 		case newElevSlice := <-ElevToDistrCh:
@@ -104,7 +103,7 @@ func Distributor(currentFloorCh chan int,
 					ElevSlice[incomingID] = newElevSlice[incomingID]
 				}
 			}
-			fmt.Printf("Elev slice sent to light %v \n", ElevSlice)
+			//fmt.Printf("Elev slice sent to light %v \n", ElevSlice)
 			lightCh <- ElevSlice
 			StateMachineOrderSlice = matrixToOrderList(ElevSlice[ID], orderCount, StateMachineOrderSlice)
 			if len(StateMachineOrderSlice) != 0 {
@@ -112,8 +111,8 @@ func Distributor(currentFloorCh chan int,
 			}
 
 		case elevOnNet = <-elevOnNetworkCh:
-			fmt.Printf("Elev slice elev on net: %v \n", ElevSlice)
-			fmt.Printf(" %v \n", elevOnNet.New)
+			// fmt.Printf("Elev slice elev on net: %v \n", ElevSlice)
+			// fmt.Printf(" %v \n", elevOnNet.New)
 			for IDindex := 0; IDindex < types.NElevators; IDindex++ {
 				if ElevSlice[IDindex].ID == elevOnNet.New {
 					ElevSlice[IDindex].Behaviour = types.Idle
@@ -121,7 +120,9 @@ func Distributor(currentFloorCh chan int,
 			}
 
 			for index := 0; index < len(elevOnNet.Lost); index++ {
+
 				intID, _ := strconv.Atoi(elevOnNet.Lost[index])
+				fmt.Printf("Lost ID: %v \n", intID)
 				ElevSlice[intID].Behaviour = types.Undefined
 				fmt.Printf("\n!!Redistributing orders!!\n")
 				redistributeOrders(elevOnNet, ElevSlice, buttonEventCh, intID)
@@ -141,6 +142,7 @@ func redistributeOrders(elevOnNet peers.PeerUpdate, ElevSlice []types.Elevator,
 				ButtonPress.Button = types.ButtonType(btnNum)
 				ElevSlice[intID].Orders[floorNum][btnNum] = 0
 				buttonEventCh <- ButtonPress
+				fmt.Printf("Order sent")
 			}
 		}
 	}
