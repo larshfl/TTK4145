@@ -55,8 +55,8 @@ func main() {
 	var buttonEventCh = make(chan types.ButtonEvent, 1000)
 
 	//Distributor <-> Network
-	var ElevToNetCh = make(chan []types.Elevator, 16)
-	var ElevToDistrCh = make(chan []types.Elevator, 16)
+	var ElevToNetCh = make(chan []types.Elevator, 100)
+	var ElevToDistrCh = make(chan []types.Elevator, 100)
 	var networkEnableCh = make(chan bool)
 	var singleOrderCh = make(chan types.SingleOrder)
 	var elevOnNetworkCh = make(chan peers.PeerUpdate)
