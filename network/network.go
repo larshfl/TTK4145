@@ -1,17 +1,13 @@
 package network
 
 import (
-	//"strconv"
-	//"fmt"
+	"math"
 	"sync"
 	"time"
 
 	"../types"
 	"./bcast"
 	"./peers"
-	//"./localip"
-	//"fmt"
-	//"strconv"
 )
 
 var currentConfirmations []string
@@ -85,7 +81,7 @@ func rxMsgHandler(rxCh chan types.Message, peerChannel chan peers.PeerUpdate, th
 	peerDistributorCh chan peers.PeerUpdate, toDistributorCh chan []types.Elevator, txCh chan types.Message) {
 	var lastReceivedID map[string]int
 	lastReceivedID = make(map[string]int)
-	lastReceivedID[thisElevID] = 1000000000000000000
+	lastReceivedID[thisElevID] = int(math.Inf(1))
 	for {
 		select {
 		case peerUpdate := <-peerChannel:
@@ -110,8 +106,6 @@ func rxMsgHandler(rxCh chan types.Message, peerChannel chan peers.PeerUpdate, th
 				currentConfirmations = append(currentConfirmations, receivedMsg.ElevID)
 				confirmationMutex.Unlock()
 			}
-			//	fmt.Printf("received msg id %v \n", receivedMsg.MsgID)
-			//	fmt.Printf("last received id %v \n", lastReceivedID[receivedMsg.ElevID] )
 			if receivedMsg.MsgID > lastReceivedID[receivedMsg.ElevID] {
 				toDistributorCh <- receivedMsg.Content
 				sendConfirmation(receivedMsg.ElevID, thisElevID, txCh)
@@ -140,17 +134,7 @@ func Network(fromDistributorCh chan []types.Elevator,
 	msgCh := make(chan types.Message, 10)
 	receivedUpdateCh := make(chan types.Message)
 	msgID := 1
-	// now := time.Now()int
-	// ID := now.UnixNano()lightCh
-	// localIP := strconv.FormatInt(ID, 10)
-	// myID <- localIP
-
-	//localIP := portNum
 	localIP := ID
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	localIP = "DISCONNECTED"
-	// }
 	myID <- localIP
 
 	//start go routines
@@ -169,7 +153,6 @@ func Network(fromDistributorCh chan []types.Elevator,
 			msgID++
 		//new update from rx
 		case newUpdate := <-receivedUpdateCh:
-			//fmt.Printf("Sending forom network \n")
 			toDistributorCh <- newUpdate.Content
 		}
 	}
