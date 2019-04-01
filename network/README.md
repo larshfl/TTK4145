@@ -8,11 +8,11 @@ In the implemented code the tx-queue is implemented as a buffered channel from d
 
 ##Message struct
 
-'''go
+´´´go
 type Message struct {
 	ElevID            string
 	Content           []Elevator
 	ConfirmedMsgOwner string
 	MsgID             int
 }
-'''
+´´´
